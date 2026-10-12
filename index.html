@@ -17,4 +17,50 @@ sel.onchange=()=>show(+sel.value);
 document.getElementById('prev').onclick=()=>formOpen?(formOpen=false,render()):show(current-1);
 document.getElementById('next').onclick=()=>formOpen?(formOpen=false,show(current+1)):show(current+1);
 const initial=parseInt(location.hash.slice(1))||1;show(Math.max(0,Math.min(names.length-1,initial-1)));
-</script></body></html>
+</script>
+<style>
+#demo-actions{position:sticky;bottom:68px;z-index:4;display:flex;gap:6px;flex-wrap:wrap;justify-content:center;background:#101b2cf2;padding:8px;max-width:650px;margin:auto}#demo-actions button{font-size:12px;padding:8px;cursor:pointer}#demo-modal{display:none;position:fixed;inset:0;background:#081322ef;z-index:20;overflow:auto;padding:20px}#demo-modal.active{display:block}#demo-box{background:#fff;color:#14233b;max-width:430px;margin:5vh auto;padding:20px;border-radius:16px}#demo-box input,#demo-box textarea{display:block;width:100%;border:1px solid #b4bdc7;background:white;color:#111;padding:12px;margin:9px 0;border-radius:8px}#demo-box button{margin:4px;background:#24354d;color:white}#demo-toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);z-index:30;background:#ffefbc;color:#1c2940;padding:10px 14px;border-radius:8px;display:none}
+</style>
+<div id="demo-actions"></div><div id="demo-modal"><div id="demo-box"><button id="demo-close">✕ 닫기</button><div id="demo-content"></div></div></div><div id="demo-toast"></div>
+<script>
+(()=>{
+const actions=document.getElementById('demo-actions'),modal=document.getElementById('demo-modal'),content=document.getElementById('demo-content');
+const save=(k,v)=>localStorage.setItem('treasure-demo-'+k,JSON.stringify(v));
+const load=(k,d)=>{try{return JSON.parse(localStorage.getItem('treasure-demo-'+k))??d}catch{return d}};
+const safe=t=>String(t).replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toast=t=>{let e=document.getElementById('demo-toast');e.textContent=t;e.style.display='block';setTimeout(()=>e.style.display='none',2000)};
+function open(h){content.innerHTML=h;modal.classList.add('active')}
+function close(){modal.classList.remove('active')}
+document.getElementById('demo-close').onclick=close;
+function goto(n){close();show(n-1);draw()}
+function add(t,f){let b=document.createElement('button');b.textContent=t;b.onclick=f;actions.appendChild(b)}
+function capture(side,next){open('<h3>'+side+' 사진 촬영 또는 앨범 선택</h3><input id="pic" type="file" accept="image/*" capture="environment"><img id="picpreview" style="width:100%;max-height:320px;object-fit:contain"><button id="picok">사진 확인</button>');document.getElementById('pic').onchange=e=>{let f=e.target.files[0];if(!f)return;let reader=new FileReader();reader.onload=()=>{document.getElementById('picpreview').src=reader.result;try{save(side+'-photo',reader.result)}catch{toast('사진 미리보기 완료')}};reader.readAsDataURL(f)};document.getElementById('picok').onclick=()=>{if(!document.getElementById('pic').files.length)return toast('사진을 선택하세요');goto(next)}}
+function entry(type){let entries=load(type,[]);open('<h3>'+type+' 등록</h3><input id="entry-title" placeholder="제목"><textarea id="entry-desc" placeholder="설명"></textarea><input id="entry-price" placeholder="가격 (선택)" type="number"><button id="entry-save">등록하기</button><h4>등록 내역</h4>'+entries.map(e=>'<p>✓ '+safe(e.title)+'</p>').join(''));document.getElementById('entry-save').onclick=()=>{let title=document.getElementById('entry-title').value.trim();if(!title)return toast('제목을 입력하세요');entries.unshift({title,desc:document.getElementById('entry-desc').value,price:document.getElementById('entry-price').value});save(type,entries);close();toast('시연용 등록 완료')}}
+function message(){let list=load('messages',[]);open('<h3>거래 문의 · 쪽지</h3><div style="max-height:30vh;overflow:auto">'+list.map(x=>'<p>✉ '+safe(x)+'</p>').join('')+'</div><textarea id="message-text" placeholder="메시지 입력"></textarea><button id="message-send">➤ 전송</button>');document.getElementById('message-send').onclick=()=>{let v=document.getElementById('message-text').value.trim();if(!v)return toast('내용을 입력하세요');list.push(v);save('messages',list);message();toast('쪽지 저장 완료')}}
+function login(){open('<h3>시연용 로그인</h3><input id="nick" placeholder="닉네임"><button id="nick-save">시작하기</button><p>실제 카카오/구글 인증은 연동되지 않았습니다.</p>');document.getElementById('nick-save').onclick=()=>{save('nickname',document.getElementById('nick').value||'시연회원');close();toast('시연 로그인 완료')}}
+function share(){if(navigator.share)navigator.share({title:'황제의부활 보물찾기',url:location.href}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>toast('링크 복사 완료'));else toast('공유 기능을 지원하지 않는 브라우저입니다')}
+function draw(){actions.innerHTML='';let n=current+1;
+if(n===1){add('시연 로그인',login);add('보물 촬영',()=>goto(2));add('보물장터',()=>goto(8));add('경매',()=>goto(11));add('세계의 보물',()=>goto(16));add('보물헌터',()=>goto(19));add('오늘의 보물',()=>goto(22));add('마이페이지',()=>goto(24))}
+if(n===2||n===3)add('앞면 촬영 / 앨범',()=>capture('앞면',4));
+if(n===4||n===5)add('뒷면 촬영 / 앨범',()=>capture('뒷면',6));
+if(n===6)add('감정서 보기 (시연)',()=>goto(7));
+if(n===7){add('감정서 저장',()=>{save('appraisal',{saved:true});toast('감정서 저장 완료')});add('공유',share);add('보물 등록',()=>entry('보물'));add('경매 등록',()=>entry('경매'))}
+if([8,9].includes(n)){add('상품 상세',()=>goto(9));add('거래 문의',message);add('결제 시연',()=>goto(10));add('공유',share)}
+if(n===10)add('시연 결제 완료',()=>{save('purchase',{complete:true});goto(24);toast('시연 결제 완료')});
+if([11,12,13,14,15,30].includes(n)){add('경매 목록',()=>goto(11));add('경매 등록',()=>entry('경매'));add('경매 상세',()=>goto(30));add('입찰 시연',()=>{save('bid',{placed:true});goto(14)})}
+if([16,17,18].includes(n)){add('세계의 보물 목록',()=>goto(17));add('상세 보기',()=>goto(18));add('거래 문의',message)}
+if([19,20,21].includes(n)){add('헌터 메인',()=>goto(19));add('의뢰게시판',()=>goto(20));add('헌터 상세',()=>goto(21));add('의뢰 등록',()=>entry('헌터 의뢰'));add('쪽지 보내기',message)}
+if([22,23].includes(n))add('이벤트 상세',()=>goto(23));
+if(n===24){add('내 보물 등록',()=>entry('보물'));add('쪽지함',message);add('내 포인트',()=>goto(26));add('문의 내역',()=>goto(27))}
+if(n===25)add('쪽지 보내기',message);
+if(n===27)add('문의 작성',()=>entry('문의'));
+if(n===29)add('계정 / 시연 로그인',login);
+}
+const originalShow=show;show=function(i){originalShow(i);close();draw()};
+document.getElementById('prev').addEventListener('click',()=>setTimeout(draw,0));
+document.getElementById('next').addEventListener('click',()=>setTimeout(draw,0));
+sel.addEventListener('change',()=>setTimeout(draw,0));
+draw();
+})();
+</script>
+</body></html>
