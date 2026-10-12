@@ -42,6 +42,21 @@ function listings(type){let list=load(type,[]);open('<h3>'+type+' 등록 상품<
 function message(){let list=load('messages',[]);open('<h3>거래 문의 · 쪽지</h3><div style="max-height:30vh;overflow:auto">'+list.map(x=>'<p>✉ '+safe(x)+'</p>').join('')+'</div><textarea id="message-text" placeholder="메시지 입력"></textarea><button id="message-send">➤ 전송</button>');document.getElementById('message-send').onclick=()=>{let v=document.getElementById('message-text').value.trim();if(!v)return toast('내용을 입력하세요');list.push(v);save('messages',list);message();toast('쪽지 저장 완료')}}
 function login(){open('<h3>시연용 로그인</h3><input id="nick" placeholder="닉네임"><button id="nick-save">시작하기</button><p>실제 카카오/구글 인증은 연동되지 않았습니다.</p>');document.getElementById('nick-save').onclick=()=>{save('nickname',document.getElementById('nick').value||'시연회원');close();toast('시연 로그인 완료')}}
 function share(){if(navigator.share)navigator.share({title:'황제의부활 보물찾기',url:location.href}).catch(()=>{});else if(navigator.clipboard)navigator.clipboard.writeText(location.href).then(()=>toast('링크 복사 완료'));else toast('공유 기능을 지원하지 않는 브라우저입니다')}
+function auctionDetail(item){
+ const id=String(item.id??item.title), base=Math.max(0,Number(item.price)||0);
+ const bids=load('auction-bids-'+id,[]);
+ const highest=Math.max(base,...bids.map(b=>Number(b.amount)||0));
+ const photo=item.photo?'<img alt="경매 상품 사진" src="'+item.photo+'" style="display:block;width:100%;max-height:240px;object-fit:contain;border-radius:10px;background:#f4f6f9;box-shadow:none">':'<div style="background:#f4f6f9;border-radius:10px;padding:55px 12px;text-align:center;color:#65748a">등록된 사진 없음</div>';
+ open('<div class="auction-detail"><h3 style="color:#183b68;margin:8px 0 12px">경매 상품 상세</h3>'+photo+'<h3 style="margin:14px 0 5px">'+safe(item.title)+'</h3><p style="color:#65748a;white-space:pre-wrap">'+safe(item.desc||'')+'</p><div style="background:#f7f9fc;border:1px solid #e2e7ee;border-radius:12px;padding:13px;line-height:1.9"><div>시작가 <strong>'+base.toLocaleString('ko-KR')+'원</strong></div><div>현재 최고 입찰가 <strong style="color:#c43b45">'+highest.toLocaleString('ko-KR')+'원</strong></div><div>남은 시간 <strong>경매 기간 미설정</strong></div><div>입찰 횟수 <strong>'+bids.length+'회</strong></div></div><h4 style="margin-bottom:8px">입찰하기 (시연)</h4><input id="auction-bid-amount" type="number" inputmode="numeric" min="'+(highest+1)+'" step="1" placeholder="'+(highest+1000).toLocaleString('ko-KR')+'원 이상 입력"><button id="auction-bid-submit">입찰 확인</button><button id="auction-inquiry">거래 문의</button><div id="auction-bid-history" style="margin-top:14px;font-size:13px;color:#52657c">'+(bids.length?'<b>입찰 내역</b>'+bids.slice(0,10).map(b=>'<p style="margin:5px 0">'+Number(b.amount).toLocaleString('ko-KR')+'원 · '+safe(b.date||'')+'</p>').join(''):'아직 입찰 내역이 없습니다.')+'</div><p style="font-size:12px;color:#65748a">시연 기능으로 실제 경매·결제는 진행되지 않습니다.</p></div>');
+ document.getElementById('auction-inquiry').onclick=message;
+ document.getElementById('auction-bid-submit').onclick=()=>{
+ const amount=Number(document.getElementById('auction-bid-amount').value);
+ if(!Number.isSafeInteger(amount)||amount<=highest)return toast('현재 최고 입찰가보다 높은 금액을 입력하세요');
+ const next=[{amount,date:new Date().toLocaleString('ko-KR')},...bids];
+ try{save('auction-bids-'+id,next)}catch(e){return toast('입찰 저장 실패: 저장 공간을 확인하세요')}
+ auctionDetail(item);toast(amount.toLocaleString('ko-KR')+'원 입찰 완료');
+ };
+}
 function renderRegistered(){
  const panel=document.getElementById('registered-list');
  const kind=current===7?'보물':current===10?'경매':current===19?'헌터 의뢰':null;
@@ -54,7 +69,7 @@ function renderRegistered(){
  const bottom='<div class="shot-part bottom" style="aspect-ratio:864 / '+(1536-cut)+'"><img src="'+src+'" alt="기존 목록 디자인"></div>';
  const cards=items.map((x,i)=>'<article data-item-index="'+i+'" tabindex="0" role="button" aria-label="등록 항목 상세 보기">'+(x.photo?'<img alt="등록 사진" src="'+x.photo+'">':'<div class="no-photo">사진 없음</div>')+'<div class="details"><b>'+safe(x.title)+'</b><div class="desc">'+safe(x.desc||'')+'</div>'+(x.price?'<div class="price">'+Number(x.price).toLocaleString('ko-KR')+'원</div>':'')+'</div></article>').join('');
  panel.innerHTML=top+'<section class="new-entries"><div class="entry-caption">새로 등록된 '+(kind==='헌터 의뢰'?'의뢰':kind==='경매'?'경매':'보물')+' · '+items.length+'건</div><div class="cards">'+cards+'</div></section>'+bottom;
- panel.querySelectorAll('article').forEach(card=>{const detail=()=>{const x=items[Number(card.dataset.itemIndex)];open('<h3>'+safe(x.title)+'</h3>'+(x.photo?'<img src="'+x.photo+'" style="width:100%;max-height:260px;object-fit:contain">':'')+'<p>'+safe(x.desc||'')+'</p><p>'+safe(x.price||'')+(x.price?'원':'')+'</p><button id="detail-message">거래 문의</button>');document.getElementById('detail-message').onclick=message};card.onclick=detail;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();detail()}}});
+ panel.querySelectorAll('article').forEach(card=>{const detail=()=>{const x=items[Number(card.dataset.itemIndex)];if(kind==='경매'){auctionDetail(x);return}open('<h3>'+safe(x.title)+'</h3>'+(x.photo?'<img src="'+x.photo+'" style="width:100%;max-height:260px;object-fit:contain">':'')+'<p>'+safe(x.desc||'')+'</p><p>'+safe(x.price||'')+(x.price?'원':'')+'</p><button id="detail-message">거래 문의</button>');document.getElementById('detail-message').onclick=message};card.onclick=detail;card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();detail()}}});
 }
 
 function draw(){actions.innerHTML='';let n=current+1;renderRegistered();
