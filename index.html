@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>황제의부활 보물찾기 V3 · 디자인 검토</title><style>*{box-sizing:border-box}body{margin:0;background:#101b2c;color:#fff;font-family:system-ui,sans-serif}header{position:sticky;top:0;background:#101b2cf2;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:3}select,button{font-size:14px;border:1px solid #a68c50;border-radius:8px;background:#24354d;color:white;padding:9px;max-width:60vw}main{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 10px 30px}img{width:100%;max-width:430px;height:auto;object-fit:contain;box-shadow:0 8px 30px #0008}footer{position:fixed;bottom:0;left:0;right:0;background:#101b2cf5;display:flex;justify-content:space-around;padding:10px;gap:12px}footer button{flex:1}small{display:block;color:#dbc89e;text-align:center;padding:8px}</style></head><body><header><strong>보물찾기 V3</strong><select id="page" aria-label="페이지 선택"></select></header><small>투자자 시연판 · 실제 결제/AI 분석은 미연동</small><main><img id="screen" alt="디자인 시안"></main><footer><button id="prev">◀ 이전</button><button id="next">다음 ▶</button></footer><script>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>황제의부활 보물찾기 | 모바일 웹</title><style>*{box-sizing:border-box}body{margin:0;background:#101b2c;color:#fff;font-family:system-ui,sans-serif}header{position:sticky;top:0;background:#101b2cf2;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;z-index:3}select,button{font-size:14px;border:1px solid #a68c50;border-radius:8px;background:#24354d;color:white;padding:9px;max-width:60vw}main{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 10px 30px}img{width:100%;max-width:430px;height:auto;object-fit:contain;box-shadow:0 8px 30px #0008}footer{position:fixed;bottom:0;left:0;right:0;background:#101b2cf5;display:flex;justify-content:space-around;padding:10px;gap:12px}footer button{flex:1}small{display:block;color:#dbc89e;text-align:center;padding:8px}</style></head><body><header><strong>황제의부활 <em>보물찾기</em></strong><select id="page" aria-label="페이지 선택"></select></header><small>실제 결제 및 AI 감정은 아직 연동되지 않았습니다.</small><main><img id="screen" alt="디자인 시안"></main><footer><button id="prev">← 뒤로가기</button><button id="next">⌂ 홈으로</button></footer><script>
 const names=["메인", "앞면 촬영", "앞면 확인", "뒷면 촬영", "뒷면 확인", "AI 감정 분석", "AI 감정서", "보물장터", "상품 상세", "결제", "경매 목록", "경매 등록", "경매 등록 완료", "입찰 완료", "낙찰 완료", "세계의 보물 소개", "세계의 보물 목록", "세계의 보물 상세", "보물헌터 메인", "의뢰게시판", "보물헌터 상세", "오늘의 보물", "이벤트 상세", "마이페이지", "쪽지함", "내 포인트", "문의 내역", "알림 설정", "계정 설정", "경매 상세"];
 const images=["treasure-hunt-v3-starter/screens/01.jpg", "treasure-hunt-v3-starter/screens/02.png", "treasure-hunt-v3-starter/screens/03.png", "treasure-hunt-v3-starter/screens/04.png", "treasure-hunt-v3-starter/screens/05.png", "treasure-hunt-v3-starter/screens/06.png", "treasure-hunt-v3-starter/screens/07.jpg", "treasure-hunt-v3-starter/screens/08.png", "treasure-hunt-v3-starter/screens/09.png", "treasure-hunt-v3-starter/screens/10.png", "treasure-hunt-v3-starter/screens/11.png", "treasure-hunt-v3-starter/screens/12.png", "treasure-hunt-v3-starter/screens/13.png", "treasure-hunt-v3-starter/screens/14.png", "treasure-hunt-v3-starter/screens/15.png", "treasure-hunt-v3-starter/screens/16.png", "treasure-hunt-v3-starter/screens/17.png", "treasure-hunt-v3-starter/screens/18.png", "treasure-hunt-v3-starter/screens/29.png", "screens/file_000000008d388206ae90217561ba1ff9.png", "treasure-hunt-v3-starter/screens/19.png", "treasure-hunt-v3-starter/screens/20.png", "treasure-hunt-v3-starter/screens/21.png", "treasure-hunt-v3-starter/screens/22.png", "treasure-hunt-v3-starter/screens/23.png", "treasure-hunt-v3-starter/screens/24.png", "treasure-hunt-v3-starter/screens/25.png", "treasure-hunt-v3-starter/screens/26.png", "treasure-hunt-v3-starter/screens/27.png", "treasure-hunt-v3-starter/screens/28.png"];
 const formImage="screens/file_00000000395c8209827082c01d7a8f4e.png";
@@ -16,7 +16,7 @@ function show(i){current=(i+names.length)%names.length;formOpen=false;render()}
 write.onclick=()=>{formOpen=true;render()};back.onclick=()=>{formOpen=false;render()};
 sel.onchange=()=>show(+sel.value);
 document.getElementById('prev').onclick=()=>formOpen?(formOpen=false,render()):show(current-1);
-document.getElementById('next').onclick=()=>formOpen?(formOpen=false,show(current+1)):show(current+1);
+document.getElementById('next').onclick=()=>show(0);
 const initial=parseInt(location.hash.slice(1))||1;show(Math.max(0,Math.min(names.length-1,initial-1)));
 </script>
 <style>
@@ -73,7 +73,7 @@ function renderRegistered(){
 }
 
 function draw(){actions.innerHTML='';let n=current+1;renderRegistered();
-if(n===1){add('시연 로그인',login);add('보물 촬영',()=>goto(2));add('보물장터',()=>goto(8));add('경매',()=>goto(11));add('세계의 보물',()=>goto(16));add('보물헌터',()=>goto(19));add('오늘의 보물',()=>goto(22));add('마이페이지',()=>goto(24))}
+if(n===1){add('로그인',login);add('보물 촬영',()=>goto(2));add('보물장터',()=>goto(8));add('경매',()=>goto(11));add('세계의 보물',()=>goto(16));add('보물헌터',()=>goto(19));add('오늘의 보물',()=>goto(22));add('마이페이지',()=>goto(24))}
 if(n===2||n===3)add('앞면 촬영 / 앨범',()=>capture('앞면',4));
 if(n===4||n===5)add('뒷면 촬영 / 앨범',()=>capture('뒷면',6));
 if(n===6){add('AI 감정 시작',()=>{open('<h3>코코가 보물을 분석하고 있어요</h3><p id="progress-label">감정 중...</p><progress id="progress-bar" max="100" value="0" style="width:100%;height:22px"></progress><button id="progress-finish" disabled>감정서 보기</button>');let pct=0;let timer=setInterval(()=>{if(!document.getElementById('progress-bar')||!modal.classList.contains('active')){clearInterval(timer);return}pct=Math.min(100,pct+10);document.getElementById('progress-bar').value=pct;document.getElementById('progress-label').textContent=pct<40?'감정 중...':pct<75?'시세 분석 중...':pct<100?'상태 분석 중...':'분석 완료';if(pct===100){clearInterval(timer);document.getElementById('progress-finish').disabled=false}},180);document.getElementById('progress-finish').onclick=()=>goto(7)});add('감정서 보기 (시연)',()=>goto(7))}
@@ -89,11 +89,34 @@ if(n===25)add('쪽지 보내기',message);
 if(n===27)add('문의 작성',()=>entry('문의'));
 if(n===29)add('계정 / 시연 로그인',login);
 }
-const originalShow=show;show=function(i){originalShow(i);close();draw()};write.onclick=()=>entry('헌터 의뢰');
+const originalShow=show;show=function(i){originalShow(i);close();draw();window.scrollTo(0,0)};write.onclick=()=>entry('헌터 의뢰');
 document.getElementById('prev').addEventListener('click',()=>setTimeout(draw,0));
 document.getElementById('next').addEventListener('click',()=>setTimeout(draw,0));
 sel.addEventListener('change',()=>setTimeout(draw,0));
 draw();
 })();
 </script>
-</body></html>
+<style>
+body{background:#eef1f5;color:#182a42}header{max-width:430px;margin:0 auto;background:#101c2e;color:#ddbd70;padding:13px 14px;min-height:54px}header strong{font-size:16px;white-space:nowrap}header em{font-style:normal;font-size:19px}header select{display:none}body>small{display:none}
+main{max-width:430px;margin:0 auto;padding:0 0 6px;display:flex;flex-direction:column;align-items:stretch;justify-content:flex-start}main>img{width:100%;max-width:430px;box-shadow:none}#registered-list{width:100%;max-width:430px}
+#demo-actions{position:relative;bottom:auto;max-width:430px;margin:0 auto;background:#fff;color:#20324b;display:flex;flex-wrap:wrap;gap:8px;padding:12px 12px 85px;justify-content:stretch;z-index:1;border-top:1px solid #e2e6ed}
+#demo-actions button{background:#173758;color:#fff;border:1px solid #b7a071;border-radius:10px;min-height:43px;flex:1 1 43%;font-size:13px;padding:9px 6px;cursor:pointer}
+footer{max-width:430px;left:50%;transform:translateX(-50%);bottom:58px;background:#fff;padding:5px 10px;gap:7px;z-index:5;border-top:1px solid #e2e6ed}footer button{flex:1;max-width:none;background:#f5f6f9;color:#1b3858;border:1px solid #d4dce7;padding:8px;font-size:12px}
+#site-bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);max-width:430px;width:100%;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));background:#101c2e;z-index:6;padding:6px 3px calc(6px + env(safe-area-inset-bottom))}
+#site-bottom button{border:0;background:transparent;color:#f5e6be;font-size:12px;min-width:0;max-width:none;padding:9px 2px;cursor:pointer}
+#demo-modal{z-index:30;padding:12px}#demo-box{margin:2vh auto;padding:15px}#demo-box button{max-width:100%}
+#site-home{display:none;background:#fff;color:#183453;padding:0 0 16px;max-width:430px;width:100%}#site-home.active{display:block}#site-home .hero{padding:25px 19px;background:linear-gradient(135deg,#14273e,#294968);color:#fff}#site-home .hero small{color:#d6c296;font-size:12px}#site-home h1{font-size:23px;margin:9px 0 6px;color:#f5db94}#site-home .hero p{font-size:13px;line-height:1.6;margin:0;color:#e2e9f3}#site-home .feature{display:block;width:calc(100% - 24px);margin:12px;padding:19px;text-align:left;background:#f7f9fc;color:#1c3857;border:1px solid #e1e7ee;border-radius:14px;font-size:17px;font-weight:700;max-width:none}#site-home .feature span{display:block;font-size:12px;color:#64788f;font-weight:400;margin-top:6px}#site-home .tilegrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:0 12px}#site-home .tilegrid button{max-width:none;text-align:left;padding:17px 12px;border:1px solid #e1e7ee;background:#fff;color:#173a62;border-radius:12px;font-size:15px;font-weight:700;min-height:84px}#site-home .tilegrid button span{display:block;font-size:11px;font-weight:400;color:#788698;margin-top:7px}
+</style>
+<div id="site-home"><section class="hero"><small>황제의부활</small><h1>보물찾기</h1><p>작은 보물 하나가 큰 가치를 만듭니다.</p></section><button class="feature" data-go="2">📷 보물 촬영하기<span>앞면과 뒷면을 촬영하고 코코 AI 감정 과정을 체험하세요</span></button><div class="tilegrid"><button data-go="8">🏺 보물장터<span>등록된 보물 보기</span></button><button data-go="11">🏆 경매하기<span>경매 참여 및 등록</span></button><button data-go="16">🌏 세계의 보물<span>세계의 보물 탐색</span></button><button data-go="19">🔎 보물헌터<span>의뢰게시판</span></button><button data-go="22">🎁 오늘의 보물<span>진행 이벤트 보기</span></button><button data-go="24">👤 마이페이지<span>쪽지 및 내 활동</span></button></div></div>
+<nav id="site-bottom" aria-label="하단 메뉴"><button data-go="1">⌂<br>홈</button><button data-go="8">🏺<br>장터</button><button data-go="11">🏆<br>경매</button><button data-go="20">🔎<br>헌터</button><button data-go="24">👤<br>마이</button></nav>
+<script>
+(()=>{
+const home=document.getElementById('site-home'),main=document.querySelector('main'),screen=document.getElementById('screen'),actions=document.getElementById('demo-actions');main.insertBefore(home,screen);
+const refresh=()=>{const atHome=current===0;home.classList.toggle('active',atHome);if(atHome)screen.style.display='none';else if(document.getElementById('registered-list').style.display!=='block')screen.style.display='block'; if(atHome){document.getElementById('registered-list').style.display='none';actions.style.display='none'}else{actions.style.display='flex'}};
+const oldShow=show;show=function(i){oldShow(i);refresh()};
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(Number(b.dataset.go)-1));
+document.getElementById('next').onclick=()=>show(0);
+window.addEventListener('hashchange',()=>{const n=parseInt(location.hash.slice(1));if(n>=1&&n<=30&&n-1!==current)show(n-1)});
+refresh();
+})();
+</script></body></html>
