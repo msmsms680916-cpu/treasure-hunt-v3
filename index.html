@@ -328,11 +328,11 @@ function marketOriginalScreen(id){
    h+=marketOriginalHit('계좌이체 선택',"marketSelectPayment('계좌이체')",51,48,45,11);
    h+=marketOriginalHit('간편결제 선택',"marketSelectPayment('간편결제')",5,59,45,11);
    h+=marketOriginalHit('보물페이 선택',"marketSelectPayment('보물페이')",51,59,45,11);
-   h+=marketOriginalHit('결제하기',"marketFinishPurchase()",3,84,94,8);
+   h+=marketOriginalHit('결제하기',"marketFinishPurchase()",3,88.8,94,6.7);
  }else{
    h+=marketOriginalHit('보물장터로 이동하기',"go('market')",4,79,92,9);
  }
- h+=[['홈','home'],['보물촬영','front'],['보물장터','market'],['경매하기','auctions'],['마이페이지','mypage']].map(([label,dest],i)=>marketOriginalHit(label,`go('${dest}')`,i*20,94,20,6)).join('');
+ if(id!=='checkout') h+=[['홈','home'],['보물촬영','front'],['보물장터','market'],['경매하기','auctions'],['마이페이지','mypage']].map(([label,dest],i)=>marketOriginalHit(label,`go('${dest}')`,i*20,94,20,6)).join('');
  return h+'</main>';
 }
 let marketPaymentChoice='신용/체크카드';
