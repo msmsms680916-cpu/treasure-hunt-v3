@@ -496,4 +496,26 @@ window.go=function(){dir='fwd';return g.apply(this,arguments)};
 window.backPage=function(){dir='back';return b.apply(this,arguments)};
 window.draw=function(){var r=d.apply(this,arguments);if(page!==last){window.__pgxAnimate(document.getElementById('app'),dir||'back');last=page}dir=null;return r};})();
 </script>
+<script>
+/* 보던 화면 기억하기: 폰이 페이지를 정리해도 다시 열면 보던 화면으로 복귀 (30분 이내) */
+(function(){
+ var KEY='thv3-resume',TTL=30*60*1000,SKIP=['frontConfirm','backConfirm','analyzing','certificate','checkout','purchaseDone'];
+ function save(){var o={s:stack.slice(),p:page,f:filter,ty:type,t:Date.now()};try{o.sel=selected;localStorage.setItem(KEY,JSON.stringify(o))}catch(e){try{delete o.sel;localStorage.setItem(KEY,JSON.stringify(o))}catch(x){}}}
+ var dr=window.draw;window.draw=function(){var r=dr.apply(this,arguments);save();return r};
+ addEventListener('visibilitychange',function(){if(document.hidden)save()});
+ addEventListener('pagehide',save);
+ var d=null;try{d=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+ if(!d||!Array.isArray(d.s)||typeof d.p!=='string'||Date.now()-d.t>TTL)return;
+ var F=d.s.concat([d.p]).filter(function(x){return typeof x==='string'});
+ while(F.length&&SKIP.indexOf(F[F.length-1])>=0)F.pop();
+ if(!F.length||(F.length===1&&F[0]==='home'))return;
+ if(/^(detail|auctionDetail)$/.test(F[F.length-1])&&!d.sel)F.pop();
+ if(!F.length)return;
+ try{if(d.sel)selected=d.sel;if(d.f)filter=d.f;if(d.ty)type=d.ty}catch(e){}
+ page=F[F.length-1];stack=F.slice(0,-1);
+ try{draw()}catch(e){stack=[];page='home';draw()}
+ try{history.replaceState({v3s:[],p:F[0]},'','#'+F[0])}catch(e){}
+ if(F.length>1){var once=function(){removeEventListener('pointerdown',once,true);if(page!==F[F.length-1]&&!(F[F.length-1]==='auctions'&&page==='auctionListNew'))return;for(var k=1;k<F.length;k++){try{history.pushState({v3s:F.slice(0,k),p:F[k]},'','#'+F[k])}catch(e){}}};addEventListener('pointerdown',once,true)}
+})();
+</script>
 </body></html>
