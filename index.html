@@ -377,4 +377,82 @@ function exactAuctionScreen(id){
 const beforeExactAuctionDraw=draw;
 draw=function(){if(page==='auctionDetail'||page==='auctionRegister'){$('app').innerHTML=exactAuctionScreen(page)}else beforeExactAuctionDraw()};
 
-</script></body></html>
+</script><script>
+/* 누르는 느낌 + 0.3초 화면 전환 */
+(function(){
+  var st=document.createElement('style');
+  st.textContent='*{-webkit-tap-highlight-color:transparent}html,body{overflow-x:clip}'
+   +'.pgx-fwd{position:relative;animation:pgxF .3s cubic-bezier(.2,.8,.2,1)}'
+   +'.pgx-back{position:relative;animation:pgxB .3s cubic-bezier(.2,.8,.2,1)}'
+   +'.pgx-fade{animation:pgxO .3s ease-out}'
+   +'@keyframes pgxF{from{left:10%;opacity:0}to{left:0;opacity:1}}'
+   +'@keyframes pgxB{from{left:-10%;opacity:0}to{left:0;opacity:1}}'
+   +'@keyframes pgxO{from{opacity:0}to{opacity:1}}';
+  document.head.appendChild(st);
+
+  /* ---------- 누르는 느낌 ---------- */
+  var cur=null,sx=0,sy=0;
+  function target(t){
+    for(var el=t;el&&el.nodeType===1&&el!==document.body;el=el.parentElement){
+      var tg=el.tagName;
+      if(tg==='INPUT'||tg==='TEXTAREA') { if(el.type!=='file'&&el.type!=='checkbox'&&el.type!=='radio') return null; continue; }
+      if(tg==='BUTTON'||tg==='A'||tg==='LABEL'||el.hasAttribute('onclick')||el.getAttribute('role')==='button'){
+        var r=el.getBoundingClientRect();
+        if(r.width*r.height>innerWidth*innerHeight*0.6) return null;
+        return el;
+      }
+    }
+    return null;
+  }
+  function invisible(el,cs){
+    var bg=cs.backgroundColor;
+    var clear=(bg==='transparent'||/rgba\(.*,\s*0\)$/.test(bg))&&cs.backgroundImage==='none';
+    return clear&&!el.textContent.trim()&&!el.querySelector('img,svg,video,canvas');
+  }
+  function press(el){
+    var cs=getComputedStyle(el);
+    var s={el:el,t:el.style.transition,sc:el.style.scale,f:el.style.filter,bg:el.style.backgroundColor,br:el.style.borderRadius};
+    s.hot=invisible(el,cs);
+    el.style.transition='scale .08s ease-out,filter .08s ease-out,background-color .08s ease-out';
+    if(s.hot){
+      el.style.backgroundColor='rgba(0,0,0,.14)';
+      if(cs.borderRadius==='0px') el.style.borderRadius='10px';
+    }else{
+      el.style.scale='.96';
+      if(cs.filter==='none') el.style.filter='brightness(.9)';
+    }
+    cur=s;
+  }
+  function release(){
+    if(!cur) return; var s=cur; cur=null; var el=s.el;
+    el.style.transition='scale .3s cubic-bezier(.2,.8,.2,1),filter .3s ease,background-color .3s ease';
+    el.style.scale=s.sc; el.style.filter=s.f; el.style.backgroundColor=s.bg;
+    setTimeout(function(){ el.style.transition=s.t; if(s.hot) el.style.borderRadius=s.br; },320);
+  }
+  addEventListener('pointerdown',function(e){
+    if(e.button>0) return; release();
+    var el=target(e.target); if(!el) return;
+    sx=e.clientX; sy=e.clientY; press(el);
+  },{capture:true,passive:true});
+  addEventListener('pointermove',function(e){
+    if(cur&&(Math.abs(e.clientX-sx)>10||Math.abs(e.clientY-sy)>10)) release();
+  },{capture:true,passive:true});
+  ['pointerup','pointercancel','scroll','blur'].forEach(function(n){addEventListener(n,release,{capture:true,passive:true});});
+
+  /* ---------- 0.3초 화면 전환 ---------- */
+  function animate(el,dir){
+    if(!el) return;
+    var pos=getComputedStyle(el).position;
+    var c=(pos==='static'||pos==='relative')?(dir==='back'?'pgx-back':'pgx-fwd'):'pgx-fade';
+    el.classList.remove('pgx-fwd','pgx-back','pgx-fade'); void el.offsetWidth; el.classList.add(c);
+    clearTimeout(el._pgxT); el._pgxT=setTimeout(function(){el.classList.remove(c);},320);
+  }
+  window.__pgxAnimate=animate;
+})();
+
+(function(){if(typeof draw!=='function'||!window.__pgxAnimate)return;var g=window.go,b=window.backPage,d=window.draw,dir=null,last=(typeof page!=='undefined')?page:null;
+window.go=function(){dir='fwd';return g.apply(this,arguments)};
+window.backPage=function(){dir='back';return b.apply(this,arguments)};
+window.draw=function(){var r=d.apply(this,arguments);if(page!==last){window.__pgxAnimate(document.getElementById('app'),dir||'back');last=page}dir=null;return r};})();
+</script>
+</body></html>
