@@ -602,6 +602,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   }
   if(x&&x.cat!==undefined&&x.title){
    const G={S:['특급 (S)','최상'],A:['우수 (A)','양호'],B:['보통 (B)','보통'],C:['보통이하 (C)','보통이하']}[x.grade]||['특급 (S)','최상'];
+   const GC={상:['상급 (양호함)','양호'],중:['중급 (보통)','보통'],하:['하급 (손상있음)','손상있음']}[x.cond];if(GC){G[0]=GC[0];G[1]=GC[1]}
    const row=(txt,b,css)=>{const d=add(document.createElement('div'));d.className='v3txt v3dt';d.style.cssText+=pos(b[0],b[1],b[2],b[3],709,1536)+'display:flex;align-items:center;font-size:3.2cqw;color:#1d2547;'+(css||'');d.textContent=txt;return d};
    row(x.year||'-',[236,910,690,950]);row(x.issuer||'-',[236,957,690,996]);row(x.cat||'-',[236,1000,690,1042]);
    const g=row('',[234,1043,690,1088]);g.innerHTML='<span style="background:#fde8a6;border-radius:3cqw;padding:.9cqw 2.6cqw;font-weight:800;color:#1d2547">'+G[0]+'</span>';
@@ -1140,6 +1141,20 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   cm.innerHTML=esc(ci.c1)+'<br><b style="color:#1666e8">'+esc(ci.c2)+'</b>';m.appendChild(cm);
  }
 
+
+ /* ---------- 감정서 → 바로 보물장터 등록 ---------- */
+ window.v3QuickReg=function(){
+  if(!front){go('register');return}
+  const ci=certInfo();
+  const shrinkTo=(src,cb)=>{if(!src)return cb('');const im=new Image();im.onload=()=>{const s=Math.min(1,560/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*s);c.height=Math.round(im.naturalHeight*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.onerror=()=>cb('');im.src=src};
+  shrinkTo(front,f=>shrinkTo(back,b=>{
+   const ph=[f,b].filter(Boolean);
+   const item={id:Date.now(),title:ci.year+' '+(INFO.coin||'')+' 동전',price:ci.price||0,cat:INFO.coin==='기념주화'?'기념 동전':'한국 동전',year:ci.year,issuer:'한국은행 / 대한민국',grade:{상:'S',중:'B',하:'C'}[INFO.cond]||'S',cond:INFO.cond,desc:String(INFO.desc||''),photos:ph,photo:ph[0]||'',photo2:ph[1]||'',seller:INFO.nick||''};
+   const arr=read('보물',[]);arr.unshift(item);
+   if(!save('보물',arr)){item.photos=ph.slice(0,1);item.photo2='';arr[0]=item;if(!save('보물',arr))return}
+   go('market');v3Toast('보물장터에 등록되었습니다');
+  }));
+ };
  /* ---------- 화면 그리기 연결 ---------- */
  const prev=draw;
  draw=function(){
@@ -1157,7 +1172,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   const heads={detail:[H709,709,1536],checkout:[H709,709,1536],purchaseDone:[H709,709,1536],auctionDetail:[H864,864,1536],auctionRegister:[H864,864,1536]};
   if(heads[page]&&!m.querySelector('.v3head')){const [bx,fw,fh]=heads[page];m.insertAdjacentHTML('beforeend',['search','alerts','menu'].map((p,i)=>'<button type="button" class="v3hot v3head" aria-label="'+['검색','알림','전체메뉴'][i]+'" onclick="go(\''+p+'\')" style="'+pos(...bx[i],fw,fh)+'z-index:30"></button>').join(''))}
   if(page==='analyzing'){m.style.containerType='inline-size';decorateAnalyzing(m)}
-  else if(page==='certificate'){m.style.containerType='inline-size';decorateCertificate(m);decorateCertInfo(m)}
+  else if(page==='certificate'){m.style.containerType='inline-size';decorateCertificate(m);decorateCertInfo(m);const rb=m.querySelector('button[aria-label="이 보물 등록하기"]');if(rb)rb.setAttribute('onclick','v3QuickReg()')}
   else if(page==='detail'){decorateDetail(m,false)}
   else if(page==='checkout'){decorateCheckout(m)}
   else if(page==='auctionRegister'){m.style.containerType='inline-size';decorateAuctionRegister(m)}
