@@ -481,6 +481,20 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
  function photoImg(src,css,extra){const i=document.createElement('img');i.className='v3photo';i.src=src;i.style.cssText=css+(extra||'');return i}
  window.v3Toast=function(t){try{toast(t)}catch(e){}};
 
+
+ /* ---------- 저장 공간 관리: 사진이 쌓여 꽉 차지 않게 ---------- */
+ const LISTS=['보물','경매','헌터 의뢰'];
+ function rawSet(k,v){try{localStorage.setItem(KEY+k,JSON.stringify(v));return true}catch(e){return false}}
+ function trimLists(level){
+  const keepN=[12,12,8,6][level],photoN=[99,4,1,1][level];
+  LISTS.forEach(k=>{let a=read(k,[]);if(!Array.isArray(a))return;a=a.slice(0,keepN).map((x,i)=>{if(i>=photoN){x={...x};x.photos=[];x.photo='';x.photo2=''}else if(level>=2&&x.photos&&x.photos.length>1){x={...x};x.photos=x.photos.slice(0,1);x.photo2=''}return x});rawSet(k,a)});
+ }
+ window.v3SafeSave=function(k,v){
+  if(rawSet(k,v))return true;
+  for(let lv=0;lv<4;lv++){trimLists(lv);const cur=Array.isArray(v)?v.slice(0,[12,12,8,6][lv]):v;if(rawSet(k,cur))return true}
+  if(Array.isArray(v)){const lite=v.slice(0,6).map((x,i)=>i?{...x,photos:[],photo:'',photo2:''}:x);if(rawSet(k,lite))return true}
+  v3Toast('저장 공간이 부족해 등록하지 못했습니다');return false;
+ };
  /* 촬영 사진 유지: 새로고침해도 이 탭에서는 사진이 남도록 */
  try{const p=JSON.parse(sessionStorage.getItem('thv3-photos')||'null');if(p){if(!front&&p.f)front=p.f;if(!back&&p.b)back=p.b}}catch(e){}
  let lastSaved='';
@@ -557,7 +571,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   const item={id:Date.now(),title:pd?pd.title:'1970년 500원 동전',price:start,unit,period:auctionPeriod,grade:pd?pd.grade:'S',cat:pd?pd.cat:'',desc:(pd?pd.desc:'')+(desc?' / '+desc:'')+' / 경매기간 '+auctionPeriod+'일',photo:pd?pd.photo:(front||V3D.arDefault),photos:pd?pd.photos:[],type:'경매'};
   window.v3Pending=null;
   const arr=read('경매',[]);arr.unshift(item);
-  if(save('경매',arr)){go('auctions');v3Toast('경매 등록이 완료되었습니다')}
+  if(v3SafeSave('경매',arr)){go('auctions');v3Toast('경매 등록이 완료되었습니다')}
  };
  function decorateAuctionRegister(m){
   const pd=window.v3Pending;
@@ -651,7 +665,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   const name=$('name').value.trim();if(!name)return v3Toast('제목을 입력하세요');
   const obj={id:Date.now(),title:name,desc:$('desc').value,price:Number($('price').value)||0,photo:front||'',photo2:back||'',region:$('region')?.value||'전국'};
   const f=$('upload').files[0];
-  const done=()=>{const arr=read(type,[]);arr.unshift(obj);if(save(type,arr)){go(type==='경매'?'auctions':type==='보물'?'market':'hunterList');v3Toast('등록이 완료되었습니다')}};
+  const done=()=>{const arr=read(type,[]);arr.unshift(obj);if(v3SafeSave(type,arr)){go(type==='경매'?'auctions':type==='보물'?'market':'hunterList');v3Toast('등록이 완료되었습니다')}};
   const shrink=(src,cb)=>{const im=new Image();im.onload=()=>{const c=document.createElement('canvas'),s=Math.min(1,560/Math.max(im.width,im.height));c.width=Math.round(im.width*s);c.height=Math.round(im.height*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.7))};im.onerror=()=>cb(src);im.src=src};
   const finish=()=>{if(obj.photo&&obj.photo.length>150000)shrink(obj.photo,s=>{obj.photo=s;if(obj.photo2&&obj.photo2.length>150000)shrink(obj.photo2,s2=>{obj.photo2=s2;done()});else done()});else done()};
   if(!f)return finish();
@@ -797,7 +811,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
  document.head.appendChild(st2);
 
  const CAM='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l1.6-2.2h6.8L17 8h3v11H4z"/><circle cx="12" cy="13.3" r="3.4"/></svg>';
- function shrinkImg(src,cb,max){const im=new Image();im.onload=()=>{const s=Math.min(1,(max||600)/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*s));c.height=Math.max(1,Math.round(im.naturalHeight*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.onerror=()=>cb(src);im.src=src}
+ function shrinkImg(src,cb,max){const im=new Image();im.onload=()=>{const s=Math.min(1,(max||480)/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.max(1,Math.round(im.naturalWidth*s));c.height=Math.max(1,Math.round(im.naturalHeight*s));c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.onerror=()=>cb(src);im.src=src}
  function pickImage(cb){const i=document.createElement('input');i.type='file';i.accept='image/*';i.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';i.onchange=()=>{const f=i.files&&i.files[0];i.remove();if(!f)return;if(!/^image\//.test(f.type)){v3Toast('이미지 파일을 선택해 주세요');return}const r=new FileReader();r.onload=()=>shrinkImg(r.result,cb);r.onerror=()=>v3Toast('사진을 읽지 못했습니다');r.readAsDataURL(f)};document.body.appendChild(i);i.click()}
  function sheet(title,body,mount){const bg=document.createElement('div');bg.className='v3sheet-bg';bg.innerHTML='<div class="v3sheet" role="dialog" aria-label="'+title+'"><div class="hd"><b>'+title+'</b><button type="button" aria-label="닫기">×</button></div><div class="ls">'+body+'</div></div>';const close=()=>bg.remove();bg.addEventListener('click',e=>{if(e.target===bg)close()});bg.querySelector('.hd button').onclick=close;document.body.appendChild(bg);if(mount)mount(bg,close);return close}
  const navHots=(F,y0,y1,fw,fh,labels)=>(labels||[['홈','home'],['보물촬영','front'],['장터','market'],['경매','auctions'],['마이페이지','mypage']]).map(([t,p],i)=>hot(t,"go('"+p+"')",i*fw/5,y0,(i+1)*fw/5,y1,fw,fh)).join('');
@@ -874,7 +888,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
    inp.addEventListener('input',()=>{const n=inp.value.replace(/[^0-9]/g,'');inp.value=n?Number(n).toLocaleString('ko-KR'):''});
    bg.querySelector('.v3big').onclick=()=>{const price=Number(inp.value.replace(/[^0-9]/g,''));if(!price){v3Toast('판매 가격을 입력해주세요');inp.focus();return}
     const arr=read('보물',[]);arr.unshift({id:Date.now(),...base,price});
-    if(save('보물',arr)){close();R=null;go('market');v3Toast('보물장터에 등록되었습니다')}};
+    if(v3SafeSave('보물',arr)){close();R=null;go('market');v3Toast('보물장터에 등록되었습니다')}};
    setTimeout(()=>{try{inp.focus();inp.select()}catch(e){}},60);
   });
  };
@@ -924,7 +938,7 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
   const d=new Date(),ph=HQ.photos.filter(Boolean);
   const it={id:Date.now(),title:HQ.title.trim(),desc:HQ.desc.trim(),cat:HQ.cat,region:HQ.region,price:HQ.price.trim(),photos:ph,photo:ph[0]||'',date:(d.getMonth()+1)+'.'+String(d.getDate()).padStart(2,'0')};
   const arr=read('헌터 의뢰',[]);arr.unshift(it);
-  if(save('헌터 의뢰',arr)){HQ=null;hqFilter='전체';go('hunterList');v3Toast('의뢰가 등록되었습니다')}
+  if(v3SafeSave('헌터 의뢰',arr)){HQ=null;hqFilter='전체';go('hunterList');v3Toast('의뢰가 등록되었습니다')}
  };
  const HQ_DEMO=[
   {id:'hq-d1',title:'1950년대 한국은행 백원 지폐를 찾습니다',cat:'지폐',region:'서울',price:'100만원',date:'10.14',views:58,desc:'아버지께서 젊은 시절 쓰시던 1950년대 백원 지폐를 찾고 있습니다. 보존 상태가 좋은 것이면 더 좋겠습니다.'},
@@ -1146,12 +1160,12 @@ const V3D={"mkTop": "data:image/webp;base64,UklGRsDHAABXRUJQVlA4ILTHAABQzgKdASpg
  window.v3QuickReg=function(){
   if(!front){go('register');return}
   const ci=certInfo();
-  const shrinkTo=(src,cb)=>{if(!src)return cb('');const im=new Image();im.onload=()=>{const s=Math.min(1,560/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*s);c.height=Math.round(im.naturalHeight*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.72))};im.onerror=()=>cb('');im.src=src};
+  const shrinkTo=(src,cb)=>{if(!src)return cb('');const im=new Image();im.onload=()=>{const s=Math.min(1,420/Math.max(im.naturalWidth,im.naturalHeight));const c=document.createElement('canvas');c.width=Math.round(im.naturalWidth*s);c.height=Math.round(im.naturalHeight*s);c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.68))};im.onerror=()=>cb('');im.src=src};
   shrinkTo(front,f=>shrinkTo(back,b=>{
    const ph=[f,b].filter(Boolean);
    const item={id:Date.now(),title:ci.year+' '+(INFO.coin||'')+' 동전',price:ci.price||0,cat:INFO.coin==='기념주화'?'기념 동전':'한국 동전',year:ci.year,issuer:'한국은행 / 대한민국',grade:{상:'S',중:'B',하:'C'}[INFO.cond]||'S',cond:INFO.cond,desc:String(INFO.desc||''),photos:ph,photo:ph[0]||'',photo2:ph[1]||'',seller:INFO.nick||''};
    const arr=read('보물',[]);arr.unshift(item);
-   if(!save('보물',arr)){item.photos=ph.slice(0,1);item.photo2='';arr[0]=item;if(!save('보물',arr))return}
+   if(!v3SafeSave('보물',arr))return;
    go('market');v3Toast('보물장터에 등록되었습니다');
   }));
  };
